@@ -95,6 +95,20 @@ def update_func(self, context):
     print("my test function", self)
 
 
+def nettoi(name, bname):
+    for cur in bpy.data.curves:
+        if bname in cur.name:
+            bpy.data.curves.remove(cur)
+    for o in bpy.data.objects:
+        if bname in o.name:
+            bpy.data.objects.remove(o)
+    for c in bpy.data.collections:
+        if 'MaCollection' in c.name:
+            bpy.data.collections.remove(c)
+
+
+
+
 def update_fonc(self, context):
     x, y, z = symbols("x y z")
 
@@ -103,16 +117,7 @@ def update_fonc(self, context):
         try:
             name = 'fonction'
             bname = 'fonction'
-
-            for cur in bpy.data.curves:
-                if bname in cur.name:
-                    bpy.data.curves.remove(cur)
-            for o in bpy.data.objects:
-                if bname in o.name:
-                    bpy.data.objects.remove(o)
-            for c in bpy.data.collections:
-                if 'MaCollection' in c.name:
-                    bpy.data.collections.remove(c)
+            nettoi(name, bname)
             #bpy.data.orphans_purge()
             MaColl = bpy.data.collections.new('MaCollection'+name)
             context.scene.collection.children.link(MaColl)
