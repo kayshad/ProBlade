@@ -3,8 +3,9 @@ import mathutils
 from bpy.props import (StringProperty, BoolProperty,
                        IntProperty, FloatProperty, FloatVectorProperty)
 from math import *
-import sympy
+
 import numpy
+from sympy import *
 import math
 import bpy
 bl_info = {
@@ -12,6 +13,8 @@ bl_info = {
     "blender": (3, 0, 0),
     "category": "Object",
 }
+
+
 
 
 def monobj(nom, vert, edg, face, loc, smooth, uvname, uvd):
@@ -92,12 +95,57 @@ def update_func(self, context):
     print("my test function", self)
 
 
-class MesProps(bpy.types.PropertyGroup):
+def update_fonc(self, context):
+    x, y, z = symbols("x y z")
 
-    vect: bpy.props.FloatVectorProperty(
-        name='Vect', description='', default=(0.0, 0.0, 0.0))
-    vect1: bpy.props.FloatVectorProperty(
-        name='Vect1', description='', default=(0.0, 0.0, 2.0), update=update_func)
+    equationc = self.equationc
+    if equationc:
+        try:
+            name = 'fonction'
+            bname = 'fonction'
+
+            for cur in bpy.data.curves:
+                if bname in cur.name:
+                    bpy.data.curves.remove(cur)
+            for o in bpy.data.objects:
+                if bname in o.name:
+                    bpy.data.objects.remove(o)
+            for c in bpy.data.collections:
+                if 'MaCollection' in c.name:
+                    bpy.data.collections.remove(c)
+            #bpy.data.orphans_purge()
+            MaColl = bpy.data.collections.new('MaCollection'+name)
+            context.scene.collection.children.link(MaColl)
+            curveData = bpy.data.curves.new(name, type='CURVE')
+            curveData.dimensions = '3D'
+            curveData.resolution_u = 2
+            curveData.bevel_depth = 0.01
+            curveOB = bpy.data.objects.new(name, curveData)
+            MaColl.objects.link(curveOB)
+            n = 200
+            yVals = []
+            xVals = numpy.linspace(-5,5,n)
+            zoom = 1
+            exp = parse_expr(equationc)
+            for xv in xVals:
+                yVals.append((zoom*xv,0.0,zoom*exp.subs(x,xv),1))
+            bpy.data.curves[name].splines.new('POLY')
+            p = bpy.data.curves[name].splines[0].points
+            p.add(len(yVals)-1)
+            print(yVals)
+            for i, coord in enumerate(yVals):
+                p[i].co = coord
+        except:
+            import traceback
+            print("", traceback.format_exc(limit=1))
+    else:
+        print("No expression is given")
+
+
+class MesProps(bpy.types.PropertyGroup):
+    equationc: bpy.props.StringProperty(name="Equation", description="Equation for y=f(x)", default="x", update=update_fonc)
+    vect: bpy.props.FloatVectorProperty(name='Vect', description='', default=(0.0, 0.0, 0.0))
+    vect1: bpy.props.FloatVectorProperty(name='Vect1', description='', default=(0.0, 0.0, 2.0), update=update_func)
 
 
 class SimpleOperator(bpy.types.Operator):
@@ -127,6 +175,7 @@ class HelloWorldPanel(bpy.types.Panel):
         row = layout.row()
         moprop = row.prop(context.scene.mes_props, "vect")
         moprop1 = row.prop(context.scene.mes_props, "vect1")
+        moneq = row.prop(context.scene.mes_props, "equationc")
         row = layout.row()
         monop = row.operator("object.simple_operator")
 
